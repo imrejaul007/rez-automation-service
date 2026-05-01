@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { Rule, IRule } from '../models/Rule';
+import { Rule } from '../models/Rule';
 import { AutomationLog, ExecutionStatus } from '../models/AutomationLog';
 import { ruleEngine } from '../services/ruleEngine';
 import { triggerService } from '../services/triggerService';
@@ -101,13 +101,13 @@ router.get(
 router.get(
   '/stats',
   asyncHandler(async (_req: Request, res: Response) => {
-    const rulesWithStats = await ruleEngine.getRulesWithStats();
-
     const totalRules = await Rule.countDocuments();
     const enabledRules = await Rule.countDocuments({ enabled: true });
     const disabledRules = totalRules - enabledRules;
 
-    const logStats = await AutomationLog.getStats();
+    const totalExecutions = await AutomationLog.countDocuments();
+    const successfulExecutions = await AutomationLog.countDocuments({ status: ExecutionStatus.SUCCESS });
+    const failedExecutions = await AutomationLog.countDocuments({ status: ExecutionStatus.FAILED });
 
     res.json({
       rules: {
@@ -115,7 +115,11 @@ router.get(
         enabled: enabledRules,
         disabled: disabledRules,
       },
-      executions: logStats,
+      executions: {
+        total: totalExecutions,
+        successful: successfulExecutions,
+        failed: failedExecutions,
+      },
     });
   })
 );
@@ -196,7 +200,7 @@ router.put(
 
     for (const field of allowedUpdates) {
       if (req.body[field] !== undefined) {
-        (rule as Record<string, unknown>)[field] = req.body[field];
+        (rule as unknown as Record<string, unknown>)[field] = req.body[field];
       }
     }
 
@@ -450,12 +454,32 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query;
 
-    const stats = await AutomationLog.getStats(
-      startDate ? new Date(startDate as string) : undefined,
-      endDate ? new Date(endDate as string) : undefined
-    );
+    const dateFilter: Record<string, unknown> = {};
+    if (startDate) {
+      dateFilter.$gte = new Date(startDate as string);
+    }
+    if (endDate) {
+      dateFilter.$lte = new Date(endDate as string);
+    }
 
-    res.json({ data: stats });
+    const filter: Record<string, unknown> = {};
+    if (Object.keys(dateFilter).length > 0) {
+      filter.createdAt = dateFilter;
+    }
+
+    const total = await AutomationLog.countDocuments(filter);
+    const successful = await AutomationLog.countDocuments({ ...filter, status: ExecutionStatus.SUCCESS });
+    const failed = await AutomationLog.countDocuments({ ...filter, status: ExecutionStatus.FAILED });
+    const pending = await AutomationLog.countDocuments({ ...filter, status: ExecutionStatus.PENDING });
+
+    res.json({
+      data: {
+        total,
+        successful,
+        failed,
+        pending,
+      }
+    });
   })
 );
 

@@ -9,7 +9,7 @@ export interface PricingRuleDefinition {
     conditions?: Array<{
       field: string;
       operator: string;
-      value: string | number | boolean;
+      value: string | number | boolean | string[] | number[];
     }>;
   };
   action: {

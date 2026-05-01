@@ -24,6 +24,11 @@ export interface IAutomationLog extends Document {
   createdAt: Date;
   completedAt?: Date;
   metadata?: Record<string, unknown>;
+  markRunning(): void;
+  markSuccess(result: Record<string, unknown>, executionTimeMs: number): void;
+  markFailed(error: string, executionTimeMs: number): void;
+  markSkipped(reason: string): void;
+  incrementRetry(): void;
 }
 
 // Automation log schema
@@ -80,7 +85,7 @@ const AutomationLogSchema = new Schema<IAutomationLog>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret) => {
+      transform: (_doc, ret: Record<string, unknown>) => {
         delete ret.__v;
         return ret;
       },

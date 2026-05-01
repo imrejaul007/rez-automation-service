@@ -1,4 +1,4 @@
-import mongoose, { Mongoose, ConnectionOptions } from 'mongoose';
+import mongoose, { Mongoose, ConnectOptions } from 'mongoose';
 import { config } from './env';
 import logger from '../utils/logger';
 
@@ -23,7 +23,7 @@ class MongoDBConnection {
     }
 
     try {
-      const options: ConnectionOptions = {
+      const options: ConnectOptions = {
         maxPoolSize: 10,
         minPoolSize: 2,
         serverSelectionTimeoutMS: 5000,

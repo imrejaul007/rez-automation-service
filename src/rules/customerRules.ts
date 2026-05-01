@@ -1,4 +1,4 @@
-import { Rule, IRule } from '../models/Rule';
+import { Rule } from '../models/Rule';
 import logger from '../utils/logger';
 
 export interface CustomerRuleDefinition {
