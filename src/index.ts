@@ -6,6 +6,7 @@ import compression from 'compression';
 import { config } from './config/env';
 import { mongoDBConnection } from './config/mongodb';
 import { redisConnection } from './config/redis';
+import { initSentry } from './config/sentry';
 import automationRoutes from './routes/automation.routes';
 import { triggerService } from './services/triggerService';
 import { ruleWorker } from './workers/ruleWorker';
@@ -14,6 +15,9 @@ import { seedInventoryRules } from './rules/inventoryRules';
 import { seedPricingRules } from './rules/pricingRules';
 import { seedLoyaltyRules } from './rules/loyaltyRules';
 import logger from './utils/logger';
+
+// Initialize Sentry error tracking
+initSentry();
 
 class ApplicationServer {
   private app: Application;
