@@ -1,0 +1,25 @@
+# render.yaml - rez-automation-service
+# Automation Rule Engine for ReZ Ecosystem
+
+services:
+  - type: web
+    name: rez-automation-service
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: INTERNAL_SERVICE_TOKEN
+        sync: false
+      - key: EVENT_BUS_URL
+        value: redis://localhost:6379
