@@ -17,7 +17,7 @@ export interface ITrigger {
 
 // Action config interface
 export interface IActionConfig {
-  [key: string]: string | number | boolean | object | undefined;
+  [key: string]: string | number | boolean | object | string[] | number[] | undefined;
 }
 
 // Action interface
@@ -39,14 +39,6 @@ export interface IRule extends Document {
   createdBy?: string;
   tags?: string[];
   metadata?: Record<string, unknown>;
-  disable(): Promise<IRule>;
-  enable(): Promise<IRule>;
-}
-
-// Static methods interface
-export interface IRuleModel extends Model<IRule> {
-  findByEvent(event: string): Promise<IRule[]>;
-  findEnabledRules(): Promise<IRule[]>;
 }
 
 // Rule schema
@@ -186,6 +178,12 @@ RuleSchema.methods.enable = function (): Promise<IRule> {
   this.enabled = true;
   return this.save();
 };
+
+// Extended model interface with static methods
+export interface IRuleModel extends Model<IRule> {
+  findByEvent(event: string): Promise<IRule[]>;
+  findEnabledRules(): Promise<IRule[]>;
+}
 
 export const Rule = mongoose.model<IRule, IRuleModel>('Rule', RuleSchema);
 

@@ -156,12 +156,12 @@ class RuleEngine {
 
       case 'in':
         return {
-          passed: Array.isArray(value) && (value as (string | number)[]).includes(fieldValue as string | number),
+          passed: Array.isArray(value) && (value as Array<string | number>).includes(fieldValue as string | number),
         };
 
       case 'nin':
         return {
-          passed: Array.isArray(value) && !(value as (string | number)[]).includes(fieldValue as string | number),
+          passed: Array.isArray(value) && !(value as Array<string | number>).includes(fieldValue as string | number),
         };
 
       case 'contains':
@@ -407,10 +407,10 @@ class RuleEngine {
           .sort({ createdAt: -1 });
 
         return {
-          ...rule.toObject(),
+          ...(rule.toObject() as unknown as IRule),
           executionCount: await AutomationLog.countDocuments({ ruleId: rule._id }),
           lastExecuted: lastLog?.createdAt,
-        } as unknown as IRule & { executionCount: number; lastExecuted?: Date };
+        } as IRule & { executionCount: number; lastExecuted?: Date };
       })
     );
 

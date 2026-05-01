@@ -1,11 +1,13 @@
-import Redis, { RedisOptions } from 'ioredis';
+import IORedis, { RedisOptions } from 'ioredis';
 import { config } from './env';
 import logger from '../utils/logger';
 
+type Redis = IORedis;
+
 class RedisConnection {
   private static instance: RedisConnection;
-  private client: Redis | null = null;
-  private subscriber: Redis | null = null;
+  private client: IORedis | null = null;
+  private subscriber: IORedis | null = null;
   private isConnected: boolean = false;
 
   private constructor() {}
@@ -58,8 +60,8 @@ class RedisConnection {
         db: config.redis.db,
       });
 
-      this.client = new Redis(options);
-      this.subscriber = new Redis(options);
+      this.client = new IORedis(options);
+      this.subscriber = new IORedis(options);
 
       this.client.on('connect', () => {
         logger.info('Redis client connected');
@@ -70,8 +72,8 @@ class RedisConnection {
         this.isConnected = true;
       });
 
-      this.client.on('error', (error) => {
-        logger.error('Redis client error', { error: error.message });
+      this.client.on('error', (err) => {
+        logger.error('Redis client error', { error: err.message });
       });
 
       this.client.on('close', () => {
@@ -79,12 +81,28 @@ class RedisConnection {
         this.isConnected = false;
       });
 
-      this.subscriber.on('error', (error) => {
-        logger.error('Redis subscriber error', { error: error.message });
+      this.client.on('reconnecting', () => {
+        logger.info('Redis reconnecting...');
       });
 
-      await this.client.connect();
-      await this.subscriber.connect();
+      // Wait for connection to be ready
+      await new Promise<void>((resolve, reject) => {
+        if (!this.client) {
+          reject(new Error('Redis client not initialized'));
+          return;
+        }
+
+        this.client.once('ready', () => {
+          this.isConnected = true;
+          resolve();
+        });
+
+        this.client.once('error', (err) => {
+          reject(err);
+        });
+      });
+
+      logger.info('Redis connected successfully');
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -94,44 +112,101 @@ class RedisConnection {
   }
 
   public async disconnect(): Promise<void> {
+    if (!this.isConnected && !this.client) {
+      logger.info('Redis is already disconnected');
+      return;
+    }
+
     try {
-      if (this.client) {
-        await this.client.quit();
-        this.client = null;
-      }
       if (this.subscriber) {
         await this.subscriber.quit();
         this.subscriber = null;
       }
+
+      if (this.client) {
+        await this.client.quit();
+        this.client = null;
+      }
+
       this.isConnected = false;
-      logger.info('Redis disconnected');
+      logger.info('Redis disconnected successfully');
     } catch (error) {
-      logger.error('Error disconnecting from Redis', { error });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Error disconnecting from Redis', { error: errorMessage });
+      throw error;
     }
   }
 
-  public getClient(): Redis {
-    if (!this.client) {
-      this.client = new Redis(this.getConnectionOptions());
-    }
+  public getClient(): Redis | null {
     return this.client;
   }
 
-  public getSubscriber(): Redis {
-    if (!this.subscriber) {
-      this.subscriber = new Redis(this.getConnectionOptions());
-    }
+  public getSubscriber(): Redis | null {
     return this.subscriber;
   }
 
-  public isReady(): boolean {
+  public isHealthy(): boolean {
     return this.isConnected && this.client?.status === 'ready';
+  }
+
+  // Helper methods for common operations
+  public async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not connected');
+    }
+
+    const fullKey = `${config.redis.keyPrefix}${key}`;
+    if (ttlSeconds) {
+      await this.client.setex(fullKey, ttlSeconds, value);
+    } else {
+      await this.client.set(fullKey, value);
+    }
+  }
+
+  public async get(key: string): Promise<string | null> {
+    if (!this.client) {
+      throw new Error('Redis client not connected');
+    }
+
+    const fullKey = `${config.redis.keyPrefix}${key}`;
+    return await this.client.get(fullKey);
+  }
+
+  public async del(key: string): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not connected');
+    }
+
+    const fullKey = `${config.redis.keyPrefix}${key}`;
+    await this.client.del(fullKey);
+  }
+
+  public async publish(channel: string, message: string): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not connected');
+    }
+
+    await this.client.publish(channel, message);
+  }
+
+  public async lpush(key: string, value: string): Promise<void> {
+    if (!this.client) {
+      throw new Error('Redis client not connected');
+    }
+
+    const fullKey = `${config.redis.keyPrefix}${key}`;
+    await this.client.lpush(fullKey, value);
+  }
+
+  public async rpop(key: string): Promise<string | null> {
+    if (!this.client) {
+      throw new Error('Redis client not connected');
+    }
+
+    const fullKey = `${config.redis.keyPrefix}${key}`;
+    return await this.client.rpop(fullKey);
   }
 }
 
 export const redisConnection = RedisConnection.getInstance();
-export const getRedisClient = () => redisConnection.getClient();
-export const getRedisSubscriber = () => redisConnection.getSubscriber();
-export const connectRedis = () => redisConnection.connect();
-export const disconnectRedis = () => redisConnection.disconnect();
-export const isRedisConnected = () => redisConnection.isReady();
+export default redisConnection;

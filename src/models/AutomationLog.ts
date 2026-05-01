@@ -24,11 +24,21 @@ export interface IAutomationLog extends Document {
   createdAt: Date;
   completedAt?: Date;
   metadata?: Record<string, unknown>;
+  // Instance methods
   markRunning(): void;
   markSuccess(result: Record<string, unknown>, executionTimeMs: number): void;
   markFailed(error: string, executionTimeMs: number): void;
   markSkipped(reason: string): void;
   incrementRetry(): void;
+}
+
+// Extended model interface with static methods
+export interface IAutomationLogModel extends Model<IAutomationLog> {
+  findByRule(ruleId: string, limit?: number): Promise<IAutomationLog[]>;
+  findByStatus(status: ExecutionStatus, limit?: number): Promise<IAutomationLog[]>;
+  findByEvent(event: string, limit?: number): Promise<IAutomationLog[]>;
+  getStats(startDate?: Date, endDate?: Date): Promise<Record<string, unknown>>;
+  getRecentLogs(limit?: number): Promise<IAutomationLog[]>;
 }
 
 // Automation log schema
@@ -224,7 +234,7 @@ AutomationLogSchema.methods.incrementRetry = function (): void {
   this.status = ExecutionStatus.RETRYING;
 };
 
-export const AutomationLog: Model<IAutomationLog> = mongoose.model<IAutomationLog>(
+export const AutomationLog = mongoose.model<IAutomationLog, IAutomationLogModel>(
   'AutomationLog',
   AutomationLogSchema
 );

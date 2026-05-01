@@ -105,9 +105,7 @@ router.get(
     const enabledRules = await Rule.countDocuments({ enabled: true });
     const disabledRules = totalRules - enabledRules;
 
-    const totalExecutions = await AutomationLog.countDocuments();
-    const successfulExecutions = await AutomationLog.countDocuments({ status: ExecutionStatus.SUCCESS });
-    const failedExecutions = await AutomationLog.countDocuments({ status: ExecutionStatus.FAILED });
+    const logStats = await AutomationLog.getStats();
 
     res.json({
       rules: {
@@ -115,11 +113,7 @@ router.get(
         enabled: enabledRules,
         disabled: disabledRules,
       },
-      executions: {
-        total: totalExecutions,
-        successful: successfulExecutions,
-        failed: failedExecutions,
-      },
+      executions: logStats,
     });
   })
 );
@@ -454,32 +448,12 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query;
 
-    const dateFilter: Record<string, unknown> = {};
-    if (startDate) {
-      dateFilter.$gte = new Date(startDate as string);
-    }
-    if (endDate) {
-      dateFilter.$lte = new Date(endDate as string);
-    }
+    const stats = await AutomationLog.getStats(
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
 
-    const filter: Record<string, unknown> = {};
-    if (Object.keys(dateFilter).length > 0) {
-      filter.createdAt = dateFilter;
-    }
-
-    const total = await AutomationLog.countDocuments(filter);
-    const successful = await AutomationLog.countDocuments({ ...filter, status: ExecutionStatus.SUCCESS });
-    const failed = await AutomationLog.countDocuments({ ...filter, status: ExecutionStatus.FAILED });
-    const pending = await AutomationLog.countDocuments({ ...filter, status: ExecutionStatus.PENDING });
-
-    res.json({
-      data: {
-        total,
-        successful,
-        failed,
-        pending,
-      }
-    });
+    res.json({ data: stats });
   })
 );
 
