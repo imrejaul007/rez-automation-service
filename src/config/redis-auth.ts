@@ -24,7 +24,7 @@
 
 import IORedis from 'ioredis';
 import { randomInt } from 'crypto';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 export interface RedisConfig {
   host?: string;
