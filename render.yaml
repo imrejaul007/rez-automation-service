@@ -22,4 +22,4 @@ services:
       - key: INTERNAL_SERVICE_TOKEN
         sync: false
       - key: EVENT_BUS_URL
-        value: redis://localhost:6379
+        sync: false
