@@ -5,7 +5,7 @@ import { ruleEngine } from '../services/ruleEngine';
 import { triggerService } from '../services/triggerService';
 import logger from '../utils/logger';
 
-const router = Router();
+const router: Router = Router();
 
 // Error handler wrapper
 const asyncHandler = (
