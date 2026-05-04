@@ -41,10 +41,13 @@ interface EnvConfig {
 
 function getEnvVar(key: string, defaultValue?: string): string {
   const value = process.env[key];
-  if (!value && !defaultValue) {
-    throw new Error(`Required environment variable ${key} is not set`);
+  if (value !== undefined) {
+    return value;
   }
-  return value || defaultValue!;
+  if (defaultValue !== undefined) {
+    return defaultValue;
+  }
+  throw new Error(`Required environment variable ${key} is not set`);
 }
 
 function getEnvNum(key: string, defaultValue: number): number {
