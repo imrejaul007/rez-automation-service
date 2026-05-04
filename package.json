@@ -4,7 +4,7 @@
   "description": "Automation rule engine service for ReZ platform",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm install --include=dev && tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest --coverage",
