@@ -64,33 +64,10 @@ function getEnvBool(key: string, defaultValue: boolean): boolean {
 }
 
 function buildMongoUri(): string {
-  const mongoUriFromEnv = getEnvVar('MONGODB_URI', '');
+  const mongoUriFromEnv = process.env.MONGODB_URI;
 
-  // If MONGODB_URI is a full connection string (contains ://), use it directly
-  if (mongoUriFromEnv && mongoUriFromEnv.includes('://')) {
-    const user = getEnvVar('MONGODB_USER', '');
-    const password = getEnvVar('MONGODB_PASSWORD', '');
-
-    // If user/password provided separately, rebuild URI with credentials
-    if (user && password) {
-      const uriWithoutAuth = mongoUriFromEnv.replace(/:\/\/.*@/, '://');
-      const authSource = getEnvVar('MONGODB_AUTH_SOURCE', 'admin');
-      const replicaSet = getEnvVar('MONGODB_REPLICA_SET', '');
-      const ssl = getEnvBool('MONGODB_SSL', false);
-
-      let uri = uriWithoutAuth.replace('://', `://${encodeURIComponent(user)}:${encodeURIComponent(password)}@`);
-      if (authSource) {
-        uri += uri.includes('?') ? `&authSource=${authSource}` : `?authSource=${authSource}`;
-      }
-      if (replicaSet) {
-        uri += uri.includes('?') ? `&replicaSet=${replicaSet}` : `?replicaSet=${replicaSet}`;
-      }
-      if (ssl) {
-        uri += uri.includes('?') ? '&ssl=true' : '?ssl=true';
-      }
-      return uri;
-    }
-
+  // If MONGODB_URI is set, use it directly
+  if (mongoUriFromEnv) {
     return mongoUriFromEnv;
   }
 
