@@ -66,6 +66,22 @@ function getEnvBool(key: string, defaultValue: boolean): boolean {
   return value.toLowerCase() === 'true';
 }
 
+function parseRedisUrl(url: string): { host: string; port: number; password: string; db: number } {
+  try {
+    const parsed = new URL(url);
+    const password = parsed.password || '';
+    const db = parsed.pathname ? parseInt(parsed.pathname.slice(1), 10) || 0 : 0;
+    return {
+      host: parsed.hostname,
+      port: parseInt(parsed.port, 10) || 6379,
+      password,
+      db,
+    };
+  } catch {
+    return { host: 'localhost', port: 6379, password: '', db: 0 };
+  }
+}
+
 function buildMongoUri(): string {
   const mongoUriFromEnv = process.env.MONGODB_URI;
 
@@ -115,13 +131,26 @@ export const config: EnvConfig = {
     ssl: getEnvBool('MONGODB_SSL', false),
   },
 
-  redis: {
-    host: getEnvVar('REDIS_HOST', 'localhost'),
-    port: getEnvNum('REDIS_PORT', 6379),
-    password: getEnvVar('REDIS_PASSWORD', ''),
-    db: getEnvNum('REDIS_DB', 0),
-    keyPrefix: getEnvVar('REDIS_KEY_PREFIX', 'rez:automation:'),
-  },
+  redis: (() => {
+    const redisUrl = process.env.REDIS_URL;
+    if (redisUrl) {
+      const parsed = parseRedisUrl(redisUrl);
+      return {
+        host: parsed.host,
+        port: parsed.port,
+        password: parsed.password,
+        db: parsed.db,
+        keyPrefix: getEnvVar('REDIS_KEY_PREFIX', 'rez:automation:'),
+      };
+    }
+    return {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
+      password: process.env.REDIS_PASSWORD || '',
+      db: process.env.REDIS_DB ? parseInt(process.env.REDIS_DB, 10) : 0,
+      keyPrefix: getEnvVar('REDIS_KEY_PREFIX', 'rez:automation:'),
+    };
+  })(),
 
   logging: {
     level: getEnvVar('LOG_LEVEL', 'info'),
