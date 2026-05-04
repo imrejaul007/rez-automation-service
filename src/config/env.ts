@@ -105,8 +105,8 @@ export const config: EnvConfig = {
 
   mongodb: {
     uri: buildMongoUri(),
-    user: getEnvVar('MONGODB_USER', ''),
-    password: getEnvVar('MONGODB_PASSWORD', ''),
+    user: process.env.MONGODB_USER || '',
+    password: process.env.MONGODB_PASSWORD || '',
     authSource: getEnvVar('MONGODB_AUTH_SOURCE', 'admin'),
     replicaSet: getEnvVar('MONGODB_REPLICA_SET', ''),
     ssl: getEnvBool('MONGODB_SSL', false),
