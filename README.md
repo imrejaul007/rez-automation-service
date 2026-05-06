@@ -1,5 +1,30 @@
 # rez-automation-service
 
+Port: 4014
+
+## Environment Variables
+```bash
+PORT=4014
+MONGODB_URI=mongodb+srv://...
+REDIS_URL=redis://...
+EVENT_BUS_URL=amqp://...
+JWT_SECRET=your-secret
+NODE_ENV=development
+LOG_LEVEL=info
+WEBHOOK_TIMEOUT=30
+MAX_RETRY_ATTEMPTS=3
+EXECUTION_TIMEOUT=60
+LOG_RETENTION_DAYS=90
+```
+
+## Health Check
+GET /health
+
+## Deploy
+[Render deployment](https://render.com)
+
+---
+
 Rule engine for automated triggers and workflow automation in the ReZ ecosystem.
 
 ---
@@ -322,14 +347,14 @@ interface ITriggerCondition {
 | `MAX_RETRY_ATTEMPTS` | No | `3` | Maximum action retries |
 | `EXECUTION_TIMEOUT` | No | `60` | Max execution time in seconds |
 | `LOG_RETENTION_DAYS` | No | `90` | Days to retain execution logs |
-| `PORT` | No | `3009` | Service port |
+| `PORT` | No | `4014` | Service port |
 | `LOG_LEVEL` | No | `info` | Logging level |
 
 ### Legacy Environment (MongoDB)
 
 ```env
 # Server
-PORT=3001
+PORT=4014
 NODE_ENV=development
 
 # MongoDB
@@ -386,7 +411,7 @@ npm run dev
 ### Create a Rule
 
 ```bash
-curl -X POST http://localhost:3001/api/rules \
+curl -X POST http://localhost:4014/api/rules \
   -H "Content-Type: application/json" \
   -d '{
     "name": "VIP Customer Discount",
@@ -411,7 +436,7 @@ curl -X POST http://localhost:3001/api/rules \
 ### Trigger an Event
 
 ```bash
-curl -X POST http://localhost:3001/api/events \
+curl -X POST http://localhost:4014/api/events \
   -H "Content-Type: application/json" \
   -d '{
     "event": "order.completed",
